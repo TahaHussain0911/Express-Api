@@ -85,6 +85,11 @@ const getUser = async (req, res) => {
     const user = await User.findOne({
       _id: userId,
     });
+    if (!user) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        msg: "Not Authorized",
+      });
+    }
     res.status(StatusCodes.OK).json({
       data: user,
     });
@@ -92,5 +97,22 @@ const getUser = async (req, res) => {
     res.status(StatusCodes.BAD_REQUEST).send(error);
   }
 };
-
-module.exports = { login, signup, updateUser, getUser };
+const updatePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const { userId } = req.user;
+  const user = await User.findOne({
+    _id: userId,
+  });
+  if (!user) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      msg: "Not Authorized",
+    });
+  }
+  const isMatch = await user.comparePassword(currentPassword);
+  if (!isMatch) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      msg: "Current password is not correct",
+    });
+  }
+};
+module.exports = { login, signup, updateUser, getUser, updatePassword };
