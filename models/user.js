@@ -3,39 +3,57 @@ const { email_regex } = require("../utils/validation-regex");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
-const UserSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: function () {
-      return this.isNew;
+const UserSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: function () {
+        return this.isNew;
+      },
+      trim: true,
     },
-    trim: true,
+    phone: {
+      type: String,
+      default: "",
+    },
+    photo: {
+      type: String,
+      default: "../uploads/cactus.jpg",
+    },
+    email: {
+      type: String,
+      required: [true, "Email is required"],
+      match: [email_regex, "Please provide valid email"],
+      unique: true,
+    },
+    password: {
+      type: String,
+      required: [true, "Password is required"],
+      minLength: 8,
+      select: false,
+    },
+    passwordChangedAt: {
+      type: Date,
+      default: null,
+      select: false,
+    },
   },
-  phone: {
-    type: String,
-    default: "",
-  },
-  photo: {
-    type: String,
-    default: "../uploads/cactus.jpg",
-  },
-  email: {
-    type: String,
-    required: [true, "Email is required"],
-    match: [email_regex, "Please provide valid email"],
-    unique: true,
-  },
-  password: {
-    type: String,
-    required: [true, "Password is required"],
-    minLength: 8,
-    select: false,
-  },
-});
+  {
+    timestamps: true,
+  }
+);
 
 UserSchema.pre("save", async function (next) {
+  console.log(this.isModified,'this.isModifiedddd');
+  
+  if (!this.isModified("password")) {
+    return next();
+  }
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
+  // passwordChangedAt field updated to the current date when password is modified 
+  // for token verification
+  this.passwordChangedAt = new Date();
   next();
 });
 

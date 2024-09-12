@@ -1,19 +1,33 @@
 const { StatusCodes } = require("http-status-codes");
+const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 const currentDate = new Date();
-const authorize_token = (req, res, next) => {
+const authorize_token = async (req, res, next) => {
   const { authorization } = req.headers;
   console.log(authorization);
   if (!authorization || !authorization.startsWith("Bearer ")) {
-    res.status(StatusCodes.FORBIDDEN).json({
+    return res.status(StatusCodes.FORBIDDEN).json({
       msg: "Not Authorized",
     });
   }
   const token = authorization.split("Bearer ")[1];
   try {
+    // did not put password changed at in token because the old token iat and passwortChanged at will always be same
     const user = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    if (user?.exp < currentDate.getTime()) {
-      res.status(StatusCodes.UNAUTHORIZED).json({
+    const found_user = await User.findById(user?.userId).select(
+      "passwordChangedAt"
+    );
+    const passwordChangedAt = Math.floor(
+      new Date(found_user?.passwordChangedAt).getTime() / 1000
+    ); // converted to seconds to compare with iat
+
+    if (user?.iat < passwordChangedAt) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        msg: "Password has been changed recently, please log in again",
+      });
+    }
+    if (user.exp <= currentDate.getTime() / 1000) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
         msg: "Token expired",
       });
     }

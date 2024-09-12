@@ -98,11 +98,11 @@ const getUser = async (req, res) => {
   }
 };
 const updatePassword = async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
+  const { currentPassword, password } = req.body;
   const { userId } = req.user;
   const user = await User.findOne({
     _id: userId,
-  });
+  }).select("+password +passwordChangedAt"); // explicitly selecting password due to select false in schema
   if (!user) {
     return res.status(StatusCodes.UNAUTHORIZED).json({
       msg: "Not Authorized",
@@ -112,6 +112,26 @@ const updatePassword = async (req, res) => {
   if (!isMatch) {
     return res.status(StatusCodes.BAD_REQUEST).json({
       msg: "Current password is not correct",
+    });
+  }
+  if (currentPassword === password) {
+    return res.status(StatusCodes.CONFLICT).json({
+      msg: "Current and new password are same!",
+    });
+  }
+  try {
+    user.password = password;
+    await user.save();
+    const token = user.createToken();
+    return res.status(StatusCodes.OK).json({
+      data: {
+        token,
+      },
+      msg: "Password Updated",
+    });
+  } catch (error) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      msg: "Something went wrong!",
     });
   }
 };
