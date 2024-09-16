@@ -1,4 +1,6 @@
 const User = require("../models/user");
+const OtpModel = require("../models/otp");
+const otpGenerator = require("otp-generator");
 const { StatusCodes } = require("http-status-codes");
 const login = async (req, res, next) => {
   try {
@@ -135,4 +137,48 @@ const updatePassword = async (req, res) => {
     });
   }
 };
-module.exports = { login, signup, updateUser, getUser, updatePassword };
+const sendOtpCode = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const userExists = await User.findOne({ email });
+    if (!userExists) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        msg: "User with this email not exists",
+      });
+    }
+    let otp_generated = otpGenerator.generate(4, {
+      lowerCaseAlphabets: false,
+      upperCaseAlphabets: false,
+      specialChars: false,
+    });
+    let otpExists = await OtpModel.findOne({ otp: otp_generated });
+    // check if otp exists in the db
+    while (otpExists) {
+      otp_generated = otpGenerator.generate(4, {
+        lowerCaseAlphabets: false,
+        upperCaseAlphabets: false,
+        specialChars: false,
+      });
+      otpExists = await OtpModel.findOne({ otp: otp_generated });
+    }
+    await OtpModel.create({ email, otp: otp_generated });
+    return res.status(StatusCodes.OK).json({
+      msg: "OTP sent successfully",
+    });
+  } catch (error) {
+    console.log(error, "error");
+
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      error: error.message,
+    });
+  }
+};
+
+module.exports = {
+  login,
+  signup,
+  updateUser,
+  getUser,
+  updatePassword,
+  sendOtpCode,
+};

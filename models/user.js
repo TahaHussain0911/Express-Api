@@ -26,6 +26,14 @@ const UserSchema = new mongoose.Schema(
       match: [email_regex, "Please provide valid email"],
       unique: true,
     },
+    otp: {
+      type: String,
+      select: false,
+    },
+    otpExpiresAt: {
+      type: Date,
+      select: false,
+    },
     password: {
       type: String,
       required: [true, "Password is required"],
@@ -44,14 +52,14 @@ const UserSchema = new mongoose.Schema(
 );
 
 UserSchema.pre("save", async function (next) {
-  console.log(this.isModified,'this.isModifiedddd');
-  
+  console.log(this.isModified, "this.isModifiedddd");
+
   if (!this.isModified("password")) {
     return next();
   }
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
-  // passwordChangedAt field updated to the current date when password is modified 
+  // passwordChangedAt field updated to the current date when password is modified
   // for token verification
   this.passwordChangedAt = new Date();
   next();
