@@ -7,6 +7,7 @@ const {
   getUser,
   updatePassword,
   sendOtpCode,
+  verifyOtp,
 } = require("../controllers/user");
 const {
   handleValidation,
@@ -19,6 +20,8 @@ const authorize_token = require("../middlewares/authorization");
 
 router.post("/login", login).post("/signup", signup, handleValidation);
 router.post("/send-otp", sendOtpCode);
+router.post("/verify-otp", verifyOtp);
+
 router.use(authorize_token);
 router.patch(
   "/updateMe",

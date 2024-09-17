@@ -174,6 +174,30 @@ const sendOtpCode = async (req, res) => {
   }
 };
 
+const verifyOtp = async (req, res) => {
+  const { otp, email } = req.body;
+  try {
+    let otpExists = await OtpModel.findOne({ email });
+
+    if (!otpExists) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        msg: "User with this email not exists",
+      });
+    }
+    if (otpExists?.otp == otp) {
+      return res.status(StatusCodes.OK).json({
+        msg: "OTP verified successfully",
+      });
+    }
+  } catch (error) {
+    console.log(error, "error");
+
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   login,
   signup,
@@ -181,4 +205,5 @@ module.exports = {
   getUser,
   updatePassword,
   sendOtpCode,
+  verifyOtp,
 };
