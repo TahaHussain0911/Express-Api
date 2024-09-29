@@ -77,6 +77,8 @@ const updateUser = async (req, res) => {
       data: updatedUser,
     });
   } catch (error) {
+    console.log(error,'error');
+    
     res.status(StatusCodes.BAD_REQUEST).send(error);
   }
 };
