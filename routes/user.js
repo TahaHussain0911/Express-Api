@@ -8,6 +8,7 @@ const {
   updatePassword,
   sendOtpCode,
   verifyOtp,
+  resetPassword,
 } = require("../controllers/user");
 const {
   handleValidation,
@@ -19,8 +20,10 @@ const { allowedKeysForUpdatePassword } = require("../utils/required-keys");
 const authorize_token = require("../middlewares/authorization");
 
 router.post("/login", login).post("/signup", signup, handleValidation);
-router.post("/send-otp", sendOtpCode);
-router.post("/verify-otp", verifyOtp);
+router
+  .post("/send-otp", sendOtpCode)
+  .post("/verify-otp", verifyOtp)
+  .post("/reset-password", resetPassword);
 
 router.use(authorize_token);
 router.patch(

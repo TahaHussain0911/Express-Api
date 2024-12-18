@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 const { email_regex } = require("../utils/validation-regex");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const emailSender = require("../utils/email-sender");
+const { handleOtpGenerate, sendOtpCode } = require("../utils/otp-functions");
 
 const UserSchema = new mongoose.Schema(
   {
@@ -45,6 +47,10 @@ const UserSchema = new mongoose.Schema(
       default: null,
       select: false,
     },
+    otpVerified: {
+      type: Boolean,
+      select: false,
+    },
   },
   {
     timestamps: true,
@@ -84,5 +90,30 @@ UserSchema.methods.comparePassword = async function (comparePass) {
   const correctPassword = await bcrypt.compare(comparePass, this.password);
   return correctPassword;
 };
-
+UserSchema.methods.generateOtp = async function () {
+  try {
+    if (this.otpExpiresAt && this.otpExpiresAt > Date.now()) {
+      const remainingTime = Math.ceil((this.otpExpiresAt - Date.now()) / 1000);
+      const seconds = `${remainingTime % 60} secs`;
+      const minutes = `${Math.floor(remainingTime / 60) || ""} mins`;
+      throw new Error(
+        `Otp already sent. Please wait ${minutes} ${seconds} before requesting another `
+      );
+    }
+    const otp = handleOtpGenerate();
+    if (otp) {
+      this.otp = otp;
+      this.otpExpiresAt = new Date(Date.now() + 2 * 60 * 1000); // mins * seconds * milliseconds
+      const send_email = await sendOtpCode(this.email, otp);
+      if (!send_email) {
+        throw new Error("Failed to send otp!");
+      }
+    } else {
+      throw new Error("Error in generating otp");
+    }
+  } catch (error) {
+    console.log(error, "error");
+    throw new Error(error?.message);
+  }
+};
 module.exports = mongoose.model("Users", UserSchema);

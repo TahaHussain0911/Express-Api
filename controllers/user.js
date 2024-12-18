@@ -77,8 +77,8 @@ const updateUser = async (req, res) => {
       data: updatedUser,
     });
   } catch (error) {
-    console.log(error,'error');
-    
+    console.log(error, "error");
+
     res.status(StatusCodes.BAD_REQUEST).send(error);
   }
 };
@@ -142,28 +142,32 @@ const updatePassword = async (req, res) => {
 const sendOtpCode = async (req, res) => {
   try {
     const { email } = req.body;
-    const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({ email }).select(
+      "+otp +otpExpiresAt"
+    );
     if (!userExists) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
         msg: "User with this email not exists",
       });
     }
-    let otp_generated = otpGenerator.generate(4, {
-      lowerCaseAlphabets: false,
-      upperCaseAlphabets: false,
-      specialChars: false,
-    });
-    let otpExists = await OtpModel.findOne({ otp: otp_generated });
-    // check if otp exists in the db
-    while (otpExists) {
-      otp_generated = otpGenerator.generate(4, {
-        lowerCaseAlphabets: false,
-        upperCaseAlphabets: false,
-        specialChars: false,
-      });
-      otpExists = await OtpModel.findOne({ otp: otp_generated });
-    }
-    await OtpModel.create({ email, otp: otp_generated });
+    await userExists.generateOtp();
+    await userExists.save();
+    // let otp_generated = otpGenerator.generate(4, {
+    //   lowerCaseAlphabets: false,
+    //   upperCaseAlphabets: false,
+    //   specialChars: false,
+    // });
+    // let otpExists = await OtpModel.findOne({ otp: otp_generated });
+    // // check if otp exists in the db
+    // while (otpExists) {
+    //   otp_generated = otpGenerator.generate(4, {
+    //     lowerCaseAlphabets: false,
+    //     upperCaseAlphabets: false,
+    //     specialChars: false,
+    //   });
+    //   otpExists = await OtpModel.findOne({ otp: otp_generated });
+    // }
+    // await OtpModel.create({ email, otp: otp_generated });
     return res.status(StatusCodes.OK).json({
       msg: "OTP sent successfully",
     });
@@ -179,16 +183,33 @@ const sendOtpCode = async (req, res) => {
 const verifyOtp = async (req, res) => {
   const { otp, email } = req.body;
   try {
-    let otpExists = await OtpModel.findOne({ email });
+    const user = await User.findOne({ email }).select(
+      "+otp +otpExpiresAt +otpVerified"
+    );
 
-    if (!otpExists) {
+    if (!user) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
-        msg: "User with this email not exists",
+        msg: "Either your otp is expired or user with that otp doesnot exist",
       });
     }
-    if (otpExists?.otp == otp) {
-      return res.status(StatusCodes.OK).json({
-        msg: "OTP verified successfully",
+    if (!user?.otpExpiresAt) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        msg: "You have already verified otp or ask again for otp!",
+      });
+    }
+    if (user.otpExpiresAt > Date.now()) {
+      if (user?.otp == otp) {
+        user.otp = undefined;
+        user.otpExpiresAt = undefined;
+        user.otpVerified = true;
+        await user.save();
+        return res.status(StatusCodes.OK).json({
+          msg: "OTP verified successfully",
+        });
+      }
+    } else {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        msg: "Your otp has been expired!",
       });
     }
   } catch (error) {
@@ -199,7 +220,42 @@ const verifyOtp = async (req, res) => {
     });
   }
 };
-
+const resetPassword = async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    if (!email || !newPassword) {
+      return res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
+        msg: "email and newPassword key is required!",
+      });
+    }
+    const user = await User.findOne({ email }).select(
+      "+password +otpVerified +passwordChangedAt"
+    );
+    if (!user) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        msg: "User with this email not exists",
+      });
+    }
+    if (!user.otpVerified) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        msg: "Otp not verified!",
+      });
+    }
+    if (newPassword?.length < 8) {
+      return res.status(StatusCodes.FORBIDDEN).json({
+        msg: "Password must be of atleast 8 characters",
+      });
+    }
+    user.password = newPassword;
+    user.passwordChangedAt = new Date();
+    user.otpVerified = false;
+    await user.save();
+    return res.status(200).json({ msg: "Password reset successfully." });
+  } catch (error) {
+    console.log(error);
+    throw new Error(error, "error");
+  }
+};
 module.exports = {
   login,
   signup,
@@ -208,4 +264,5 @@ module.exports = {
   updatePassword,
   sendOtpCode,
   verifyOtp,
+  resetPassword,
 };
