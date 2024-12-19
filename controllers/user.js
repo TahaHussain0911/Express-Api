@@ -1,6 +1,4 @@
 const User = require("../models/user");
-const OtpModel = require("../models/otp");
-const otpGenerator = require("otp-generator");
 const { StatusCodes } = require("http-status-codes");
 const login = async (req, res, next) => {
   try {
@@ -152,22 +150,6 @@ const sendOtpCode = async (req, res) => {
     }
     await userExists.generateOtp();
     await userExists.save();
-    // let otp_generated = otpGenerator.generate(4, {
-    //   lowerCaseAlphabets: false,
-    //   upperCaseAlphabets: false,
-    //   specialChars: false,
-    // });
-    // let otpExists = await OtpModel.findOne({ otp: otp_generated });
-    // // check if otp exists in the db
-    // while (otpExists) {
-    //   otp_generated = otpGenerator.generate(4, {
-    //     lowerCaseAlphabets: false,
-    //     upperCaseAlphabets: false,
-    //     specialChars: false,
-    //   });
-    //   otpExists = await OtpModel.findOne({ otp: otp_generated });
-    // }
-    // await OtpModel.create({ email, otp: otp_generated });
     return res.status(StatusCodes.OK).json({
       msg: "OTP sent successfully",
     });
@@ -247,7 +229,7 @@ const resetPassword = async (req, res) => {
       });
     }
     user.password = newPassword;
-    user.passwordChangedAt = new Date();
+    // user.passwordChangedAt = new Date();
     user.otpVerified = false;
     await user.save();
     return res.status(200).json({ msg: "Password reset successfully." });

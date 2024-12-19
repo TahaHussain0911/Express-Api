@@ -51,12 +51,18 @@ const UserSchema = new mongoose.Schema(
       type: Boolean,
       select: false,
     },
+    role: {
+      type: String,
+      default: "user",
+      immutable: true,
+    },
   },
   {
     timestamps: true,
   }
 );
 
+// before saving the document in db it will hash the password
 UserSchema.pre("save", async function (next) {
   console.log(this.isModified, "this.isModifiedddd");
 
@@ -77,6 +83,7 @@ UserSchema.methods.createToken = function () {
       userId: this._id,
       email: this.email,
       name: this.name,
+      role: this.role,
     },
     process.env.JWT_SECRET_KEY,
     { expiresIn: process.env.JWT_EXPIRY }

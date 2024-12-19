@@ -2,6 +2,8 @@ require("dotenv").config();
 const express = require("express");
 const connectDb = require("./database/connect");
 const UserRouter = require("./routes/user");
+const CategoryRouter = require("./routes/category");
+
 const path = require("path");
 const notFound = require("./middlewares/notFound");
 const PORT = process.env.NODE_PORT;
@@ -12,9 +14,17 @@ app.use(express.json());
 app.use(express.urlencoded());
 
 app.use("/api/v1/auth", UserRouter);
+app.use("/api/v1", CategoryRouter);
 
 app.use(notFound);
+app.use((err, req, res, next) => {
+  console.error(err);
 
+  res.status(500).json({
+    msg: "Something went wrong.",
+    error: err.message,
+  });
+});
 const start = async () => {
   try {
     await connectDb(MONGO_URL);

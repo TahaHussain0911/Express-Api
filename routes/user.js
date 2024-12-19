@@ -17,7 +17,7 @@ const {
 } = require("../middlewares/validation");
 const { upload } = require("../utils/image-upload");
 const { allowedKeysForUpdatePassword } = require("../utils/required-keys");
-const authorize_token = require("../middlewares/authorization");
+const { authorize_token } = require("../middlewares/authorization");
 
 router.post("/login", login).post("/signup", signup, handleValidation);
 router

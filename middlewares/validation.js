@@ -47,4 +47,20 @@ const filterAllowedKeys = (allowedKeys) => {
     next();
   };
 };
-module.exports = { handleValidation, formDataValidation, filterAllowedKeys };
+
+const duplicateKeyError = (err, req, res, next) => {
+  if (err.code === 11000) {
+    const field = Object.keys(err.keyValue)[0];
+    return res.status(StatusCodes.CONFLICT).json({
+      error: "Duplicate Key Error",
+      msg: `${field} already exists`,
+    });
+  }
+  next(err);
+};
+module.exports = {
+  handleValidation,
+  formDataValidation,
+  filterAllowedKeys,
+  duplicateKeyError,
+};
