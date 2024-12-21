@@ -1,9 +1,12 @@
 const mongoose = require("mongoose");
+const category = require("../models/category");
 
 const connectDb = (url) => {
   return mongoose
     .connect(url)
-    .then((data) => console.log("DATABASE CONNECTED"))
+    .then(async (data) => {
+      console.log("DATABASE CONNECTED");
+    })
     .catch((err) => console.log("DATABASE ERRROR=>", err));
 };
 
