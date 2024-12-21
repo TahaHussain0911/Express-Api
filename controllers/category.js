@@ -97,7 +97,7 @@ const deleteCategory = async (req, res, next) => {
     const categoryId = req.params.id;
     const category = await Category.findByIdAndDelete(categoryId);
     if (!category) {
-      return res.status(StatusCodes.EXPECTATION_FAILED).json({
+      return res.status(StatusCodes.NOT_FOUND).json({
         msg: "Category Not Found!",
       });
     }
