@@ -1,5 +1,6 @@
 const { StatusCodes } = require("http-status-codes");
 const Category = require("../models/category");
+const SubCategory = require("../models/sub-category");
 const getCategories = async (req, res, next) => {
   try {
     const { search, page = 1, limit = 40 } = req.query;
@@ -13,11 +14,12 @@ const getCategories = async (req, res, next) => {
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
     res.status(StatusCodes.OK).json({
-      data: { categories },
+      data: categories,
     });
   } catch (error) {
     console.log(error, "error");
-    throw new Error(error.message);
+    next(error);
+    // throw new Error(error.message);
   }
 };
 const getSingleCategory = async (req, res) => {
@@ -35,6 +37,7 @@ const getSingleCategory = async (req, res) => {
   } catch (error) {
     console.log(error, "error");
     throw new Error(error.message);
+    next(error);
   }
 };
 const addCategory = async (req, res, next) => {
@@ -95,6 +98,14 @@ const updateCategory = async (req, res, next) => {
 const deleteCategory = async (req, res, next) => {
   try {
     const categoryId = req.params.id;
+    const subCategoryExists = await SubCategory.findOne({
+      category: categoryId,
+    });
+    if (subCategoryExists) {
+      return res.status(StatusCodes.CONFLICT).json({
+        msg: "Sub Category exists against this category",
+      });
+    }
     const category = await Category.findByIdAndDelete(categoryId);
     if (!category) {
       return res.status(StatusCodes.NOT_FOUND).json({
