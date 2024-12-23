@@ -15,9 +15,9 @@ app.use(express.json());
 app.use(express.urlencoded());
 
 app.use("/api/v1/auth", UserRouter);
-app.use("/api/v1", CategoryRouter);
-app.use("/api/v1", SubCategoryRouter);
-app.use("/api/v1", BlogsRouter);
+app.use("/api/v1/category", CategoryRouter);
+app.use("/api/v1/sub-category", SubCategoryRouter);
+app.use("/api/v1/blogs", BlogsRouter);
 
 app.use(notFound);
 app.use((err, req, res, next) => {

@@ -12,16 +12,15 @@ const {
 } = require("../controllers/category");
 const { duplicateKeyError } = require("../middlewares/validation");
 const router = express.Router();
-router
-  .get("/category", getCategories)
-  .get("/category/:slug", getSingleCategory);
+router.get("/", getCategories).get("/:slug", getSingleCategory);
 
+// commend this as middleware will be applied on below all routers if defined
 router.use([authorize_token, authorize_admin]);
 
-router.post("/category", addCategory, duplicateKeyError);
+router.post("/", addCategory, duplicateKeyError);
 
-router.patch("/category", updateCategory, duplicateKeyError);
+router.patch("/", updateCategory, duplicateKeyError);
 
-router.delete("/category/:id", deleteCategory);
+router.delete("/:id", deleteCategory);
 
 module.exports = router;

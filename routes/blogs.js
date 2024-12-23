@@ -14,11 +14,13 @@ const {
 } = require("../controllers/blogs");
 const { upload } = require("../utils/image-upload");
 const router = express.Router();
+// no need to use this as api/v1 is forwarding 
+// authorize token middleware from category.js
 router.use(authorize_token);
-router.get("/blogs", getAllBlogs).get("/blogs/:slug", getSingleBlog);
+router.get("/", getAllBlogs).get("/:slug", getSingleBlog);
 
 router.post(
-  "/blogs",
+  "/",
   formDataValidation,
   upload.array("images", 4),
   addBlog,
@@ -26,11 +28,11 @@ router.post(
 );
 
 router.patch(
-  "/blogs",
+  "/",
   formDataValidation,
   upload.array("images", 4),
   updateBlog,
   duplicateKeyError
 );
-router.delete("/blogs/:id", deleteBlog);
+router.delete("/:id", deleteBlog);
 module.exports = router;
