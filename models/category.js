@@ -7,6 +7,7 @@ const CategorySchema = new mongoose.Schema(
       required: [true, "Category Name is required!"],
       minLength: 3,
       unique: true,
+      trime: true,
       collation: { locale: "en", strength: 2 },
     },
     slug: {
@@ -15,7 +16,7 @@ const CategorySchema = new mongoose.Schema(
     },
   },
   {
-    timestamp: true,
+    timestamps: true,
   }
 );
 
@@ -29,11 +30,7 @@ CategorySchema.pre("validate", function (next) {
         trim: true,
         strict: true,
       });
-      console.log(this.slug,'this.slug');
-      
-    }
-    if (this.categoryName) {
-      this.categoryName = this.categoryName.trim();
+      console.log(this.slug, "this.slug");
     }
     next();
   } catch (error) {
@@ -41,6 +38,12 @@ CategorySchema.pre("validate", function (next) {
     throw new Error(error?.message);
   }
 });
-CategorySchema.index({ categoryName: 1 }, { unique: true, collation: { locale: "en", strength: 2 } });
-CategorySchema.index({ slug: 1 }, { unique: true, collation: { locale: "en", strength: 2 } });
+CategorySchema.index(
+  { categoryName: 1 },
+  { unique: true, collation: { locale: "en", strength: 2 } }
+);
+CategorySchema.index(
+  { slug: 1 },
+  { unique: true, collation: { locale: "en", strength: 2 } }
+);
 module.exports = mongoose.model("Category", CategorySchema);

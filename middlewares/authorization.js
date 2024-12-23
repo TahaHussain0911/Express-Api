@@ -4,36 +4,13 @@ const jwt = require("jsonwebtoken");
 const currentDate = new Date();
 
 const authorize_admin = async (req, res, next) => {
-  const { authorization } = req.headers;
-  if (!authorization || !authorization.startsWith("Bearer ")) {
-    return res.status(StatusCodes.FORBIDDEN).json({
-      msg: "Not Authorized",
-    });
-  }
-  const token = authorization.split("Bearer ")[1];
+  const { role } = req.user;
   try {
-    const user = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    const found_user = User.findById(user?.userId).select("+passwordChangedAt");
-    const passwordChangedAt = Math.floor(
-      new Date(found_user.passwordChangedAt).getTime() / 1000
-    );
-    // check if password was changed than new token will be generated with new issued at
-    if (user?.iat < passwordChangedAt) {
-      return res.status(StatusCodes.UNAUTHORIZED).json({
-        msg: "Password has been changed recently, please log in again",
-      });
-    }
-    if (user?.exp <= currentDate.getTime() / 1000) {
-      return res.status(StatusCodes.UNAUTHORIZED).json({
-        msg: "Token is expired",
-      });
-    }
-    if (user?.role !== "admin") {
+    if (role !== "admin") {
       return res.status(StatusCodes.UNAUTHORIZED).json({
         msg: "Only admin can access this route!",
       });
     }
-    req.user = { userId: user?.userId, name: user?.name, role: user?.role };
     next();
   } catch (error) {
     console.log(error, "error");
@@ -70,7 +47,7 @@ const authorize_token = async (req, res, next) => {
         msg: "Token expired",
       });
     }
-    req.user = { userId: user?.userId, name: user?.name };
+    req.user = { userId: user?.userId, name: user?.name, role: user?.role };
     next();
   } catch (error) {
     res.status(StatusCodes.FORBIDDEN).json({

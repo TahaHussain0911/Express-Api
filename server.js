@@ -3,7 +3,8 @@ const express = require("express");
 const connectDb = require("./database/connect");
 const UserRouter = require("./routes/user");
 const CategoryRouter = require("./routes/category");
-const SubCategoryRouter=require("./routes/sub-category")
+const SubCategoryRouter = require("./routes/sub-category");
+const BlogsRouter = require("./routes/blogs");
 const path = require("path");
 const notFound = require("./middlewares/notFound");
 const PORT = process.env.NODE_PORT;
@@ -16,7 +17,7 @@ app.use(express.urlencoded());
 app.use("/api/v1/auth", UserRouter);
 app.use("/api/v1", CategoryRouter);
 app.use("/api/v1", SubCategoryRouter);
-
+app.use("/api/v1", BlogsRouter);
 
 app.use(notFound);
 app.use((err, req, res, next) => {

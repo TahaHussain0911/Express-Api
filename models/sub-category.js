@@ -11,6 +11,7 @@ const SubCategorySchema = new mongoose.Schema(
       type: String,
       required: [true, "Sub Category Name is required!"],
       minLength: 3,
+      trim: true,
       unique: true,
       collation: { locale: "en", strength: 2 },
     },
@@ -20,7 +21,7 @@ const SubCategorySchema = new mongoose.Schema(
     },
   },
   {
-    timestamp: true,
+    timestamps: true,
   }
 );
 // SubCategorySchema.pre("save", async function (next) {
@@ -50,9 +51,6 @@ SubCategorySchema.pre("validate", function (next) {
         trim: true,
         strict: true,
       });
-    }
-    if (this.subCategoryName) {
-      this.subCategoryName = this.subCategoryName.trim();
     }
     next();
   } catch (error) {
