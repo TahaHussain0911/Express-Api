@@ -19,4 +19,8 @@ const upload = multer({
     callback(null, true);
   },
 });
-module.exports = { upload };
+
+const uploadMultipleMiddleware = upload.fields([
+  { name: "images", maxCount: 4 }, // Allow up to 4 images under the "images" key
+]);
+module.exports = { upload, uploadMultipleMiddleware };

@@ -21,7 +21,7 @@ app.use("/api/v1/blogs", BlogsRouter);
 
 app.use(notFound);
 app.use((err, req, res, next) => {
-  console.error(err);
+  // console.error(err);
 
   res.status(500).json({
     msg: "Something went wrong.",

@@ -2,7 +2,11 @@ const { StatusCodes } = require("http-status-codes");
 const Blogs = require("../models/blogs");
 const Category = require("../models/category");
 const SubCategory = require("../models/sub-category");
-const { generateSlug, transformObjectId } = require("../utils/helper");
+const {
+  generateSlug,
+  transformObjectId,
+  deleteImageLocally,
+} = require("../utils/helper");
 const { ObjectId } = require("mongodb");
 const getAllBlogs = async (req, res) => {
   try {
@@ -54,12 +58,29 @@ const getAllBlogs = async (req, res) => {
 
 const getSingleBlog = async (req, res, next) => {
   try {
+    const blogSlug = req.params.slug;
+    const { userId, role } = req.user;
+    const blog = await Blogs.findOne({
+      slug: blogSlug,
+      $or: [{ user: userId }, { role: "admin" }],
+    });
+    if (!blog) {
+      return res.status(StatusCodes.NOT_FOUND).json({
+        msg: "Blog not found",
+      });
+    }
+    res.status(StatusCodes.OK).json({
+      data: blog,
+    });
   } catch (error) {
     next(error);
   }
 };
 const addBlog = async (req, res, next) => {
   try {
+    console.log(req?.files, "req?.files");
+    console.log(req?.file, "req?.file");
+
     const { userId, role } = req.user;
     const { title, description, category, subCategories } = req.body;
     const categoryExists = await Category.exists({ _id: category });
@@ -134,9 +155,18 @@ const addBlog = async (req, res, next) => {
 };
 const updateBlog = async (req, res, next) => {
   try {
+    console.log(req.files);
+
     const { userId, role } = req.user;
     const imageFiles = req?.files?.map((file) => file?.filename);
-    const { blogId, category, subCategories, title, description } = req.body;
+    const {
+      blogId,
+      category,
+      subCategories,
+      title,
+      description,
+      deleteImages,
+    } = req.body;
     const blog = await Blogs.findById(blogId);
     if (!blog) {
       return res.status(StatusCodes.NOT_FOUND).json({
@@ -199,13 +229,28 @@ const updateBlog = async (req, res, next) => {
         }
       }
     }
-    const params = {
+    let params = {
       title,
       description,
-      images: [...blog?.images, ...imageFiles],
+      images: [...blog?.images, ...imageFiles]?.filter(
+        (ele) => !deleteImages?.includes(ele)
+      ),
       category,
       subCategories,
     };
+    for (let i = 0; i < deleteImages?.length; i++) {
+      const file = deleteImages[i];
+      if (blog?.images?.includes(file)) {
+        try {
+          await deleteImageLocally(file);
+        } catch (error) {
+          return res.status(StatusCodes.CONFLICT).json({
+            msg: "Error while updating",
+            error: error.message,
+          });
+        }
+      }
+    }
     Object.entries(params).forEach(([key, value]) => {
       if (value && (!Array.isArray(value) || value.length > 0)) {
         blog[key] = value;
@@ -259,6 +304,19 @@ const deleteBlog = async (req, res, next) => {
       return res.status(StatusCodes.UNAUTHORIZED).json({
         msg: "Blog not found!",
       });
+    }
+    if (blog?.images?.length > 0) {
+      for (let i = 0; i < blog?.images.length; i++) {
+        const blogImage = blog?.images?.[i];
+        try {
+          await deleteImageLocally(blogImage);
+        } catch (error) {
+          return res.status(StatusCodes.CONFLICT).json({
+            msg: "Error while updating",
+            error: error.message,
+          });
+        }
+      }
     }
     res.status(StatusCodes.OK).json({
       msg: "Blog Deleted",
