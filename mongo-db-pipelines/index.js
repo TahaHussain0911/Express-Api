@@ -179,3 +179,124 @@ const filterOnEyeColor = [
     },
   },
 ];
+// 13) Retrieve a distinct list of tags used by active users.
+const uniqueTags = [
+  {
+    $unwind: "$tags",
+  },
+  {
+    $group: {
+      _id: null,
+      uniqueTags: {
+        $addToSet: "$tags",
+      },
+    },
+  },
+];
+// 13) Who has registered the most recently
+const recentRegister = [
+  {
+    $sort: {
+      registered: -1,
+    },
+  },
+  {
+    $limit: 4,
+  },
+  {
+    $project: {
+      name: 1,
+      age: 1,
+      registered: 1,
+    },
+  },
+];
+
+// 14) Categorize users on favorite fruit
+const fruiteCategory = [
+  {
+    $project: {
+      name: 1,
+      registered: 1,
+      favoriteFruit: 1,
+      age: 1,
+      gender: 1,
+    },
+  },
+  {
+    $group: {
+      _id: "$favoriteFruit",
+      users: {
+        // $push: "$name",
+        $push: "$$ROOT",
+      },
+    },
+  },
+];
+// 15) Users having "ad" tag at 2nd position
+const includesAd = [
+  {
+    $match: {
+      "tags.1": "ad",
+    },
+  },
+  {
+    $count: "totalAdTagUsers",
+  },
+];
+
+// 16) List companies located in USA with their user count
+const companiesInUSA = [
+  {
+    $match: {
+      "company.location.country": "USA",
+    },
+  },
+  {
+    $group: {
+      _id: "$company.title",
+      userCount: {
+        $sum: 1,
+      },
+    },
+  },
+];
+
+/// mongodb lookup
+// 1) populate author details
+// sol 1
+const author_lookup = [
+  {
+    $lookup: {
+      from: "authors",
+      localField: "author_id",
+      foreignField: "_id",
+      as: "author",
+    },
+  },
+  {
+    $addFields: {
+      author: {
+        $first: "$author",
+      },
+    },
+  },
+];
+// sol 2
+const author_lookup_2 = [
+    {
+      $lookup: {
+        from: "authors",
+        localField: "author_id",
+        foreignField: "_id",
+        as: "author",
+      },
+    },
+    {
+      $addFields: {
+        author: {
+          $arrayElemAt:["author",0]
+        },
+      },
+    },
+  ];
