@@ -1,7 +1,6 @@
 const { StatusCodes } = require("http-status-codes");
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
-const currentDate = new Date();
 
 const authorize_admin = async (req, res, next) => {
   const { role } = req.user;
@@ -42,6 +41,7 @@ const authorize_token = async (req, res, next) => {
         msg: "Password has been changed recently, please log in again",
       });
     }
+    const currentDate = new Date();
     if (user.exp <= currentDate.getTime() / 1000) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
         msg: "Token expired",

@@ -99,8 +99,9 @@ UserSchema.methods.comparePassword = async function (comparePass) {
 };
 UserSchema.methods.generateOtp = async function () {
   try {
-    if (this.otpExpiresAt && this.otpExpiresAt > Date.now()) {
-      const remainingTime = Math.ceil((this.otpExpiresAt - Date.now()) / 1000);
+    const otpExpiryDate = new Date(this.otpExpiresAt).getTime();
+    if (this.otpExpiresAt && otpExpiryDate > Date.now()) {
+      const remainingTime = Math.ceil((otpExpiryDate - Date.now()) / 1000);
       const seconds = `${remainingTime % 60} secs`;
       const minutes = `${Math.floor(remainingTime / 60) || ""} mins`;
       throw new Error(
